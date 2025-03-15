@@ -1,6 +1,6 @@
+from db.database_handler import DatabaseHandler
 from flask import Blueprint, render_template
 from flask_socketio import SocketIO
-from db.database_handler import DatabaseHandler
 from services.config_services import Config
 
 settings_bp = Blueprint("settings", __name__)

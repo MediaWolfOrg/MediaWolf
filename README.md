@@ -178,3 +178,34 @@ MediaWolf/
 
 **Settings Manager**
 - [x] Settings Loader & Saver
+
+
+# 📦 Local Development Setup
+
+**Docker Setup**
+
+In order to quickly get started with the project you can use the docker compose file to start the project.
+
+- Make sure you have docker and docker compose installed
+- Clone the repository
+- Run `docker compose up -d`
+- Access the application at `http://127.0.0.1:5000`
+
+
+**Manual Setup**
+
+- Clone the repository
+- create a virtual environment and activate it (You can use pyenv for ease of maintaining multiple versions)
+- Run `pip install -r docker/requirements.txt`
+- Run `export FLASK_APP=backend/main.py && flask run`
+- Access the application at `http://127.0.0.1:5000`
+
+**Commiting Changes**
+
+Make sure you install the pre-commit hooks by running `pre-commit install`
+
+- Run `git add .`
+- Run `git commit -m "Commit Message"`
+- Run `git push`
+
+You might face some issues in your files with the pre-commit hooks, fix them and try again.

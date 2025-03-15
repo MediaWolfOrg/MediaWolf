@@ -1,7 +1,8 @@
-import threading
 import queue
-from logger import logger
 import subprocess
+import threading
+
+from logger import logger
 from services.config_services import Config
 
 
@@ -22,7 +23,13 @@ class SpotDLDownloadService:
         item_name = data.get("name")
         item_artist = data.get("artist")
 
-        download_info = {"name": item_name, "type": item_type, "artist": item_artist, "url": spotify_url, "status": "Pending..."}
+        download_info = {
+            "name": item_name,
+            "type": item_type,
+            "artist": item_artist,
+            "url": spotify_url,
+            "status": "Pending...",
+        }
 
         self.download_queue.put((spotify_url, download_info))
         self.download_history[spotify_url] = download_info
@@ -53,7 +60,9 @@ class SpotDLDownloadService:
                 command = ["spotdl", "--output", f"{download_path}", url]
                 logger.info(f"SpotDL command: {command}")
 
-                self.spodtdl_subprocess = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                self.spodtdl_subprocess = subprocess.Popen(
+                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
                 stdout, stderr = self.spodtdl_subprocess.communicate()
 
                 if download_info["status"] == "Cancelled":
@@ -62,7 +71,7 @@ class SpotDLDownloadService:
 
                 if self.spodtdl_subprocess.returncode == 0:
                     download_info["status"] = "Complete"
-                    logger.info(f"Finished Item")
+                    logger.info("Finished Item")
                 else:
                     download_info["status"] = "Failed"
                     logger.error(f"Error downloading: {stderr}")
@@ -82,10 +91,10 @@ class SpotDLDownloadService:
     def cancel_active_download(self):
         try:
             if not self.spodtdl_subprocess:
-                logger.info(f"No active download.")
+                logger.info("No active download.")
                 return
 
-            logger.info(f"Cancelling active download.")
+            logger.info("Cancelling active download.")
             self.spodtdl_subprocess.terminate()
 
             for url, info in self.download_history.items():
@@ -95,14 +104,14 @@ class SpotDLDownloadService:
                     break
 
             self.spodtdl_subprocess = None
-            logger.info(f"Active download cancelled")
+            logger.info("Active download cancelled")
 
         except Exception as e:
             logger.error(f"Cancel Active Error: {str(e)}")
 
     def cancel_pending_downloads(self):
         try:
-            logger.info(f"Request to cancel pending download recieved")
+            logger.info("Request to cancel pending download recieved")
 
             temp_queue = []
             while not self.download_queue.empty():
@@ -114,7 +123,7 @@ class SpotDLDownloadService:
             for item in temp_queue:
                 self.download_queue.put(item)
 
-            logger.info(f"Pending download cancelled")
+            logger.info("Pending download cancelled")
 
         except Exception as e:
             logger.error(f"Cancel Pending Error: {str(e)}")

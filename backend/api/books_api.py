@@ -1,7 +1,7 @@
+from db.database_handler import DatabaseHandler
 from flask import Blueprint, render_template
 from flask_socketio import SocketIO
 from services.readarr_services import ReadarrService
-from db.database_handler import DatabaseHandler
 
 books_bp = Blueprint("books", __name__)
 

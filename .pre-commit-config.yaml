@@ -1,0 +1,23 @@
+repos:
+-   repo: https://github.com/psf/black
+    rev: 23.12.1  # Use the latest stable version
+    hooks:
+    -   id: black
+        language_version: python3
+        types: [python]
+        exclude: '(^venv/|^\.venv/)'
+
+-   repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8
+        args:
+          - --max-line-length=150
+          - --exclude=.git,__pycache__,build,dist,venv
+
+-   repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+    -   id: isort
+        args: ["--profile", "black"] 
+        exclude: '(^venv/|^\.venv/)'

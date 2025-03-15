@@ -28,8 +28,7 @@ class SubscriptionsAPI:
         def handle_download_link():
             """Add Subscriptions."""
             try:
-                subs = {}
-
+                pass
             except Exception as e:
                 logger.error(f"Error with subscriptions: {str(e)}")
 

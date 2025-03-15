@@ -1,8 +1,9 @@
-import os
 import json
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Any
-from logger import logger
+import os
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List
+
+import logger
 
 LOG_FILE_NAME = "config/mediawolf_log.log"
 CONFIG_FILE_NAME = "config/mediawolf_settings.json"
@@ -73,7 +74,9 @@ class Config:
 
     # Output formatting
     track_output: str = "{artist}/{album} - ({year})/{artist} - {title}.{output-ext}"
-    album_output: str = "{artist}/{album} - ({year})/{artist} - {album} - {track-number} - {title}.{output-ext}"
+    album_output: str = (
+        "{artist}/{album} - ({year})/{artist} - {album} - {track-number} - {title}.{output-ext}"
+    )
     playlist_output: str = "{list-name}/{artist} - {title}.{output-ext}"
     artist_output: str = "{artist}/{album} - ({year})/{artist} - {title}.{output-ext}"
 

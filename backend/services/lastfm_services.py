@@ -1,7 +1,8 @@
-from logger import logger
-import requests
-import pylast
 import time
+
+import pylast
+import requests
+from logger import logger
 
 
 class LastFMService:
@@ -25,11 +26,19 @@ class LastFMService:
         for related_artist in related_artists:
             try:
                 artist_obj = self.lastfm_network.get_artist(related_artist.item.name)
-                genres = ", ".join([tag.item.get_name().title() for tag in artist_obj.get_top_tags()[:5]]) or "Unknown Genre"
+                genres = (
+                    ", ".join(
+                        [tag.item.get_name().title() for tag in artist_obj.get_top_tags()[:5]]
+                    )
+                    or "Unknown Genre"
+                )
                 listeners = artist_obj.get_listener_count() or 0
                 play_count = artist_obj.get_playcount() or 0
                 image_link = self._get_artist_image(related_artist.item.name)
-                overview = artist_obj.get_bio_content() or f"No Biography available for: {related_artist.item.name}"
+                overview = (
+                    artist_obj.get_bio_content()
+                    or f"No Biography available for: {related_artist.item.name}"
+                )
 
                 new_artist = {
                     "name": related_artist.item.name,
@@ -57,7 +66,12 @@ class LastFMService:
 
             if "data" in data and data["data"]:
                 artist_info = data["data"][0]
-                return artist_info.get("picture_xl") or artist_info.get("picture_large") or artist_info.get("picture_medium") or artist_info.get("picture", "")
+                return (
+                    artist_info.get("picture_xl")
+                    or artist_info.get("picture_large")
+                    or artist_info.get("picture_medium")
+                    or artist_info.get("picture", "")
+                )
 
         except Exception as e:
             logger.error(f"Deezer Error: {str(e)}")

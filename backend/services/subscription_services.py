@@ -1,15 +1,39 @@
-from services import spotdl_download_services
-from services import spotdl_download_services
 import json
 import os
+
 from logger import logger
 
 example_subscriptions = [
-    {"name": "Tech News Playlist", "lastSync": "2025-03-12 08:30", "items": 25, "type": "YouTube Playlist"},
-    {"name": "Jazz Music Collection", "lastSync": "2025-03-10 15:00", "items": 40, "type": "Spotify Playlist"},
-    {"name": "Top Hits Playlist", "lastSync": "2025-03-11 12:00", "items": 58, "type": "YouTube Playlist"},
-    {"name": "Fitness & Health Playlist", "lastSync": "2025-03-09 09:45", "items": 22, "type": "Spotify Playlist"},
-    {"name": "Science Video Collection", "lastSync": "2025-03-08 18:21", "items": 15, "type": "YouTube Playlist"},
+    {
+        "name": "Tech News Playlist",
+        "lastSync": "2025-03-12 08:30",
+        "items": 25,
+        "type": "YouTube Playlist",
+    },
+    {
+        "name": "Jazz Music Collection",
+        "lastSync": "2025-03-10 15:00",
+        "items": 40,
+        "type": "Spotify Playlist",
+    },
+    {
+        "name": "Top Hits Playlist",
+        "lastSync": "2025-03-11 12:00",
+        "items": 58,
+        "type": "YouTube Playlist",
+    },
+    {
+        "name": "Fitness & Health Playlist",
+        "lastSync": "2025-03-09 09:45",
+        "items": 22,
+        "type": "Spotify Playlist",
+    },
+    {
+        "name": "Science Video Collection",
+        "lastSync": "2025-03-08 18:21",
+        "items": 15,
+        "type": "YouTube Playlist",
+    },
 ]
 
 SUBSCRIPTION_CONFIG_FILE_PATH = "config/mediawolf_subs.json"

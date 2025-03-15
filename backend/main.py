@@ -1,24 +1,25 @@
+import os
+
+from api.books_api import BooksAPI
+from api.downloads_api import DownloadsAPI
+from api.logs_api import LogsAPI
+from api.movies_api import MoviesAPI
+from api.music_api import MusicAPI
+from api.settings_api import SettingsAPI
+from api.shows_api import ShowsAPI
+from api.subscriptions_api import SubscriptionsAPI
+from api.tasks_api import TasksAPI
+from db.music_db_handler import MusicDBHandler
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 from logger import logger
-import os
-from api.music_api import MusicAPI
-from api.books_api import BooksAPI
-from api.shows_api import ShowsAPI
-from api.movies_api import MoviesAPI
-from api.settings_api import SettingsAPI
-from api.tasks_api import TasksAPI
-from api.logs_api import LogsAPI
-from api.downloads_api import DownloadsAPI
-from api.subscriptions_api import SubscriptionsAPI
+from services.config_services import Config
 from services.lidarr_services import LidarrService
 from services.radarr_services import RadarrService
 from services.readarr_services import ReadarrService
 from services.sonarr_services import SonarrService
-from services.spotify_services import SpotifyService
 from services.spotdl_download_services import SpotDLDownloadService
-from services.config_services import Config
-from db.music_db_handler import MusicDBHandler
+from services.spotify_services import SpotifyService
 
 
 class MediaWolfApp:
@@ -40,18 +41,32 @@ class MediaWolfApp:
         self.sonarr_service = SonarrService()
         self.radarr_service = RadarrService()
         self.readarr_service = ReadarrService()
-        self.spotdl_download_service = SpotDLDownloadService(self.config, self.spotdl_download_history)
+        self.spotdl_download_service = SpotDLDownloadService(
+            self.config, self.spotdl_download_history
+        )
         self.spotify_service = SpotifyService(self.config)
         self.readarr_service = ()
 
-        self.music_api = MusicAPI(self.music_db, self.socketio, self.lidarr_service, self.spotify_service, self.spotdl_download_service)
+        self.music_api = MusicAPI(
+            self.music_db,
+            self.socketio,
+            self.lidarr_service,
+            self.spotify_service,
+            self.spotdl_download_service,
+        )
         self.books_api = BooksAPI(self.music_db, self.socketio, self.readarr_service)
         self.movies_api = MoviesAPI(self.music_db, self.socketio, self.radarr_service)
         self.shows_api = ShowsAPI(self.music_db, self.socketio, self.sonarr_service)
         self.downloads_api = DownloadsAPI(self.socketio)
         self.subscriptions_api = SubscriptionsAPI(self.socketio)
         self.settings_api = SettingsAPI(self.music_db, self.socketio, self.config)
-        self.tasks_api = TasksAPI(self.socketio, self.lidarr_service, self.radarr_service, self.readarr_service, self.sonarr_service)
+        self.tasks_api = TasksAPI(
+            self.socketio,
+            self.lidarr_service,
+            self.radarr_service,
+            self.readarr_service,
+            self.sonarr_service,
+        )
         self.logs_api = LogsAPI(self.socketio)
 
         self.add_routes()
@@ -91,6 +106,10 @@ class MediaWolfApp:
         self.socketio.run(self.app, host=self.host, port=self.port)
 
 
+# Create an instance of MediaWolfApp
+media_wolf_app = MediaWolfApp()
+# Expose the Flask application instance
+app = media_wolf_app.app
+
 if __name__ == "__main__":
-    media_wolf_app = MediaWolfApp()
     media_wolf_app.run()

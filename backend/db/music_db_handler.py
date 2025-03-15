@@ -1,8 +1,9 @@
 import urllib.parse
+
+from db.database_handler import DatabaseHandler
+from db.music_models import DismissedArtist, LidarrArtist, RecommendedArtist
 from logger import logger
 from sqlalchemy import func
-from db.music_models import RecommendedArtist, LidarrArtist, DismissedArtist
-from db.database_handler import DatabaseHandler
 
 
 class MusicDBHandler(DatabaseHandler):
@@ -69,7 +70,11 @@ class MusicDBHandler(DatabaseHandler):
         try:
             session = self.SessionLocal()
 
-            lidarr_artist = session.query(LidarrArtist).filter(func.lower(LidarrArtist.name) == lidarr_artist_name.lower()).first()
+            lidarr_artist = (
+                session.query(LidarrArtist)
+                .filter(func.lower(LidarrArtist.name) == lidarr_artist_name.lower())
+                .first()
+            )
 
             if lidarr_artist:
                 new_recommended_count = 0
@@ -104,7 +109,9 @@ class MusicDBHandler(DatabaseHandler):
                         logger.error(f"Error Processing Recomendation: {recommended_name} {str(e)}")
 
                 session.commit()
-                logger.debug(f"Added {new_recommended_count} new recommended artists for {lidarr_artist_name}.")
+                logger.debug(
+                    f"Added {new_recommended_count} new recommended artists for {lidarr_artist_name}."
+                )
             else:
                 logger.error(f"LidarrArtist {lidarr_artist_name} not found in the database.")
 
@@ -124,52 +131,80 @@ class MusicDBHandler(DatabaseHandler):
         page = data.get("page", None)
 
         if selected_artist == "all":
-            db_results = self._get_random_artists(min_play_count, min_listeners, sort_by, num_results, page)
+            db_results = self._get_random_artists(
+                min_play_count, min_listeners, sort_by, num_results, page
+            )
         else:
-            db_results = self._get_recommended_artists_for_lidarr_artist(selected_artist, min_play_count, min_listeners, sort_by)
+            db_results = self._get_recommended_artists_for_lidarr_artist(
+                selected_artist, min_play_count, min_listeners, sort_by
+            )
 
         json_results = [artist.as_dict() for artist in db_results]
         self.recommended_artists = json_results
         return json_results
 
-    def _get_recommended_artists_for_lidarr_artist(self, lidarr_artist_name, min_play_count=None, min_listeners=None, sort_by="play_count"):
+    def _get_recommended_artists_for_lidarr_artist(
+        self, lidarr_artist_name, min_play_count=None, min_listeners=None, sort_by="play_count"
+    ):
         """Retrieve all recommended artists for a given Lidarr artist, with optional filtering."""
         session = self.SessionLocal()
         try:
             logger.debug(f"Getting recommended artists for: {lidarr_artist_name}")
-            lidarr_artist = session.query(LidarrArtist).filter(func.lower(LidarrArtist.name) == lidarr_artist_name.lower()).first()
+            lidarr_artist = (
+                session.query(LidarrArtist)
+                .filter(func.lower(LidarrArtist.name) == lidarr_artist_name.lower())
+                .first()
+            )
 
             if lidarr_artist:
                 recommended_artists = lidarr_artist.recommended_artists
 
                 if min_play_count:
-                    recommended_artists = [artist for artist in recommended_artists if artist.play_count >= min_play_count]
+                    recommended_artists = [
+                        artist
+                        for artist in recommended_artists
+                        if artist.play_count >= min_play_count
+                    ]
                 if min_listeners:
-                    recommended_artists = [artist for artist in recommended_artists if artist.listeners >= min_listeners]
+                    recommended_artists = [
+                        artist
+                        for artist in recommended_artists
+                        if artist.listeners >= min_listeners
+                    ]
 
                 if sort_by == "plays-desc":
-                    recommended_artists = sorted(recommended_artists, key=lambda x: x.play_count, reverse=True)
+                    recommended_artists = sorted(
+                        recommended_artists, key=lambda x: x.play_count, reverse=True
+                    )
                 elif sort_by == "plays-asc":
                     recommended_artists = sorted(recommended_artists, key=lambda x: x.play_count)
                 elif sort_by == "listeners-desc":
-                    recommended_artists = sorted(recommended_artists, key=lambda x: x.listeners, reverse=True)
+                    recommended_artists = sorted(
+                        recommended_artists, key=lambda x: x.listeners, reverse=True
+                    )
                 elif sort_by == "listeners-asc":
                     recommended_artists = sorted(recommended_artists, key=lambda x: x.listeners)
 
-                logger.debug(f"Found {len(recommended_artists)} recommended artists for: {lidarr_artist_name}")
+                logger.debug(
+                    f"Found {len(recommended_artists)} recommended artists for: {lidarr_artist_name}"
+                )
                 return recommended_artists
             else:
                 logger.error(f"LidarrArtist {lidarr_artist_name} not found.")
                 return []
 
         except Exception as e:
-            logger.error(f"Error retrieving recommended artists for: {lidarr_artist_name} -> {str(e)}")
+            logger.error(
+                f"Error retrieving recommended artists for: {lidarr_artist_name} -> {str(e)}"
+            )
             return []
 
         finally:
             session.close()
 
-    def _get_random_artists(self, min_play_count=None, min_listeners=None, sort_by="play_count", num_results=10, page=1):
+    def _get_random_artists(
+        self, min_play_count=None, min_listeners=None, sort_by="play_count", num_results=10, page=1
+    ):
         """Retrieve random recommended artists with filters and sorting."""
         session = self.SessionLocal()
         try:
@@ -213,14 +248,21 @@ class MusicDBHandler(DatabaseHandler):
         try:
             session = self.SessionLocal()
 
-            recommended_artists = session.query(RecommendedArtist).filter(func.lower(RecommendedArtist.name) == artist_name.lower()).all()
+            recommended_artists = (
+                session.query(RecommendedArtist)
+                .filter(func.lower(RecommendedArtist.name) == artist_name.lower())
+                .all()
+            )
 
             if recommended_artists:
                 for recommended_artist in recommended_artists:
                     recommended_artist.status = status
 
                 session.commit()
-                logger.info(f"Updated status for {len(recommended_artists)} recommended artists with name '{artist_name}' to '{status}'.")
+                logger.info(
+                    f"Updated status for {len(recommended_artists)} recommended artists "
+                    f"with name '{artist_name}' to '{status}'."
+                )
 
             for rec in self.recommended_artists:
                 if rec.get("name", "").lower() == artist_name.lower():

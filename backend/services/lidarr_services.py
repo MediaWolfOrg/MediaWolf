@@ -1,16 +1,17 @@
-from logger import logger
+import concurrent.futures
+import json
+import os
+import urllib.parse
+from datetime import datetime
+
+import musicbrainzngs
 import requests
 from db.music_db_handler import MusicDBHandler
-from services.lastfm_services import LastFMService
+from logger import logger
 from services.config_services import Config
-import os
-import json
-import urllib.parse
-import musicbrainzngs
+from services.lastfm_services import LastFMService
 from thefuzz import fuzz
 from unidecode import unidecode
-from datetime import datetime
-import concurrent.futures
 
 
 class LidarrService:
@@ -18,7 +19,11 @@ class LidarrService:
         self.config = config
         self.db = db
         self.thread_limit = 4
-        self.lastfm_service = LastFMService(self.config.lastfm_api_key, self.config.lastfm_api_secret, self.config.lastfm_sleep_interval)
+        self.lastfm_service = LastFMService(
+            self.config.lastfm_api_key,
+            self.config.lastfm_api_secret,
+            self.config.lastfm_sleep_interval,
+        )
         self.app_name = "MediaWolf"
         self.app_rev = "0.0.0"
         self.app_url = "mediawolf.github.io"
@@ -30,17 +35,23 @@ class LidarrService:
             for artist_name in lidarr_artists:
                 logger.info(f"Processing artist: {artist_name}")
 
-                has_existing_recommendations = self.db._get_recommended_artists_for_lidarr_artist(artist_name)
+                has_existing_recommendations = self.db._get_recommended_artists_for_lidarr_artist(
+                    artist_name
+                )
 
                 if not has_existing_recommendations:
                     recommendations = self.lastfm_service.generate_recommendations(artist_name)
 
                     if recommendations:
-                        self.db.store_recommended_artists_for_lidarr_artist(artist_name, recommendations)
+                        self.db.store_recommended_artists_for_lidarr_artist(
+                            artist_name, recommendations
+                        )
                     else:
                         logger.warning(f"No recommendations found for artist: {artist_name}")
                 else:
-                    logger.info(f"Artist {artist_name} already has recommendations in the database.")
+                    logger.info(
+                        f"Artist {artist_name} already has recommendations in the database."
+                    )
 
         except Exception as e:
             logger.error(f"Error generating and storing LastFM recommendations: {str(e)}")
@@ -58,7 +69,9 @@ class LidarrService:
             logger.info("Getting Artists from Lidarr")
             endpoint = f"{self.config.lidarr_address}/api/v1/artist"
             headers = {"X-Api-Key": self.config.lidarr_api_key}
-            response = requests.get(endpoint, headers=headers, timeout=self.config.lidarr_api_timeout)
+            response = requests.get(
+                endpoint, headers=headers, timeout=self.config.lidarr_api_timeout
+            )
 
             if response.status_code == 200:
                 return response.json() or []
@@ -89,7 +102,9 @@ class LidarrService:
                     "rootFolderPath": self.config.lidarr_root_folder_path,
                     "foreignArtistId": mbid,
                     "monitored": True,
-                    "addOptions": {"searchForMissingAlbums": self.config.lidarr_search_for_missing_albums},
+                    "addOptions": {
+                        "searchForMissingAlbums": self.config.lidarr_search_for_missing_albums
+                    },
                 }
                 response = requests.post(lidarr_url, headers=headers, json=payload)
                 if response.status_code == 201:
@@ -98,24 +113,35 @@ class LidarrService:
                 else:
                     logger.error(f"Failed to add artist '{artist_name}' to Lidarr.")
                     error_data = json.loads(response.content)
-                    error_message = error_data[0].get("errorMessage", "No Error Message Returned") if error_data else "Error Unknown"
+                    error_message = (
+                        error_data[0].get("errorMessage", "No Error Message Returned")
+                        if error_data
+                        else "Error Unknown"
+                    )
                     logger.error(error_message)
                     if "already been added" in error_message:
                         status = "Already in Lidarr"
                         logger.info(f"Artist '{artist_name}' is already in Lidarr.")
                     elif "configured for an existing artist" in error_message:
                         status = "Already in Lidarr"
-                        logger.info(f"'{artist_folder}' folder already configured for an existing artist.")
+                        logger.info(
+                            f"'{artist_folder}' folder already configured for an existing artist."
+                        )
                     elif "Invalid Path" in error_message:
                         status = "Invalid Path"
-                        logger.info(f"Path: {os.path.join(self.root_folder_path, artist_folder, '')} not valid.")
+                        logger.info(
+                            f"Path: {os.path.join(self.root_folder_path, artist_folder, '')} not valid."
+                        )
                     else:
                         status = "Failed to Add"
 
             else:
                 status = "Failed to Add"
                 logger.info(f"No Matching Artist for: '{artist_name}' in MusicBrainz.")
-                return_status = {"result": "fail", "message": f"No Matching Artist for: '{artist_name}' in MusicBrainz."}
+                return_status = {
+                    "result": "fail",
+                    "message": f"No Matching Artist for: '{artist_name}' in MusicBrainz.",
+                }
 
             self.db.update_status_for_recommended_artist(artist_name, status)
             item = {"name": artist_name, "status": status}
@@ -136,28 +162,37 @@ class LidarrService:
 
             for artist in artists:
                 match_ratio = fuzz.ratio(artist_name.lower(), artist["name"].lower())
-                decoded_match_ratio = fuzz.ratio(unidecode(artist_name.lower()), unidecode(artist["name"].lower()))
+                decoded_match_ratio = fuzz.ratio(
+                    unidecode(artist_name.lower()), unidecode(artist["name"].lower())
+                )
                 if match_ratio > 90 or decoded_match_ratio > 90:
                     mbid = artist["id"]
-                    logger.info(f"Artist '{artist_name}' matched '{artist['name']}' with MBID: {mbid}  Match Ratio: {max(match_ratio, decoded_match_ratio)}")
+                    logger.info(
+                        f"Artist '{artist_name}' matched '{artist['name']}' with MBID: {mbid}  Match Ratio: {max(match_ratio, decoded_match_ratio)}"
+                    )
                     break
             else:
                 if self.config.lidarr_fallback_to_top_result and artists:
                     mbid = artists[0]["id"]
-                    logger.info(f"Artist '{artist_name}' matched '{artists[0]['name']}' with MBID: {mbid}  Match Ratio: {max(match_ratio, decoded_match_ratio)}")
+                    logger.info(
+                        f"Artist '{artist_name}' matched '{artists[0]['name']}' with MBID: {mbid} "
+                        f"Match Ratio: {max(match_ratio, decoded_match_ratio)}"
+                    )
 
         return mbid
 
     def get_wanted_albums_from_lidarr(self):
         try:
-            logger.warning(f"Accessing Lidarr API")
+            logger.warning("Accessing Lidarr API")
             self.lidarr_status = "busy"
             self.lidarr_items = []
             page = 1
             while True:
                 endpoint = f"{self.config.lidarr_address}/api/v1/wanted/missing?includeArtist=true"
                 params = {"apikey": self.config.lidarr_api_key, "page": page}
-                response = requests.get(endpoint, params=params, timeout=self.config.lidarr_api_timeout)
+                response = requests.get(
+                    endpoint, params=params, timeout=self.config.lidarr_api_timeout
+                )
                 if response.status_code == 200:
                     wanted_missing_albums = response.json()
                     if not wanted_missing_albums["records"]:
@@ -165,7 +200,9 @@ class LidarrService:
                     for album in wanted_missing_albums["records"]:
                         if self.lidarr_stop_event.is_set():
                             break
-                        parsed_date = datetime.fromisoformat(album["releaseDate"].replace("Z", "+00:00"))
+                        parsed_date = datetime.fromisoformat(
+                            album["releaseDate"].replace("Z", "+00:00")
+                        )
                         album_year = parsed_date.year
                         album_name = self.convert_to_lidarr_format(album["title"])
                         album_folder = f"{album_name} ({album_year})"
@@ -199,7 +236,10 @@ class LidarrService:
             self.lidarr_items.sort(key=lambda x: (x["artist"], x["album_name"]))
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_limit) as executor:
-                self.lidarr_futures = [executor.submit(self.get_missing_tracks_for_album, album) for album in self.lidarr_items]
+                self.lidarr_futures = [
+                    executor.submit(self.get_missing_tracks_for_album, album)
+                    for album in self.lidarr_items
+                ]
                 concurrent.futures.wait(self.lidarr_futures)
 
             self.lidarr_status = "complete"
@@ -212,7 +252,9 @@ class LidarrService:
             return {"status": self.lidarr_status, "data": self.lidarr_items}
 
     def get_missing_tracks_for_album(self, req_album):
-        logger.warning(f'Reading Missing Track list of {req_album["artist"]} - {req_album["album_name"]} from Lidarr API')
+        logger.warning(
+            f'Reading Missing Track list of {req_album["artist"]} - {req_album["album_name"]} from Lidarr API'
+        )
         endpoint = f"{self.config.lidarr_address}/api/v1/track"
         params = {"apikey": self.config.lidarr_api_key, "albumId": req_album["album_id"]}
         try:
@@ -247,7 +289,7 @@ class LidarrService:
 
     def attempt_lidarr_song_import(self, req_album, song, filename):
         try:
-            logger.warning(f"Attempting import of song via Lidarr API")
+            logger.warning("Attempting import of song via Lidarr API")
             endpoint = f"{self.config.lidarr_address}/api/v1/manualimport"
             headers = {"X-Api-Key": self.config.lidarr_api_key, "Content-Type": "application/json"}
             full_file_path = os.path.join(req_album["album_full_path"], filename)
@@ -269,9 +311,11 @@ class LidarrService:
             }
             response = requests.post(endpoint, json=[data], headers=headers)
             if response.status_code == 202:
-                logger.warning(f"Song import initiated")
+                logger.warning("Song import initiated")
             else:
-                logger.error(f"Import Attempt - Failed to initiate song import: {response.status_code}")
+                logger.error(
+                    f"Import Attempt - Failed to initiate song import: {response.status_code}"
+                )
                 logger.error(f"Import Attempt - Error message: {response.text}")
 
         except Exception as e:
@@ -289,20 +333,25 @@ class LidarrService:
                 for folder in root_folders:
                     root_folder_list.append(folder["path"])
             else:
-                logger.warning(f"No Lidarr root folders found")
+                logger.warning("No Lidarr root folders found")
 
             if root_folder_list:
                 data = {"name": "RescanFolders", "folders": root_folder_list}
-                headers = {"X-Api-Key": self.config.lidarr_api_key, "Content-Type": "application/json"}
-                response = requests.post(f"{self.config.lidarr_address}{endpoint}", json=data, headers=headers)
+                headers = {
+                    "X-Api-Key": self.config.lidarr_api_key,
+                    "Content-Type": "application/json",
+                }
+                response = requests.post(
+                    f"{self.config.lidarr_address}{endpoint}", json=data, headers=headers
+                )
                 if response.status_code != 201:
-                    logger.warning(f"Failed to start lidarr library scan")
+                    logger.warning("Failed to start lidarr library scan")
 
         except Exception as e:
             logger.error(f"Lidarr library scan failed: {str(e)}")
 
         else:
-            logger.warning(f"Lidarr library scan started")
+            logger.warning("Lidarr library scan started")
 
     def convert_to_lidarr_format(self, input_string):
         bad_characters = r'\/<>?*:|"'

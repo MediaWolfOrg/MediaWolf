@@ -1,7 +1,7 @@
+from db.database_handler import DatabaseHandler
 from flask import Blueprint, render_template
 from flask_socketio import SocketIO
 from services.radarr_services import RadarrService
-from db.database_handler import DatabaseHandler
 
 movies_bp = Blueprint("movies", __name__)
 

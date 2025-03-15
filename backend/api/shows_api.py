@@ -1,7 +1,7 @@
+from db.database_handler import DatabaseHandler
 from flask import Blueprint, render_template
 from flask_socketio import SocketIO
 from services.sonarr_services import SonarrService
-from db.database_handler import DatabaseHandler
 
 shows_bp = Blueprint("shows", __name__)
 

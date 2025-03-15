@@ -1,14 +1,13 @@
-import os
 import json
-import uuid
-import logger
-from dataclasses import dataclass, asdict
+import os
+from dataclasses import asdict, dataclass
 from typing import Dict, Optional
+
+from logger import logger
 from services.lidarr_services import LidarrService
 from services.radarr_services import RadarrService
 from services.readarr_services import ReadarrService
 from services.sonarr_services import SonarrService
-from logger import logger
 
 TASKS_CONFIG_FILE_NAME = "config/mediawolf_tasks.json"
 
@@ -26,7 +25,13 @@ class Task:
 
 
 class Tasks:
-    def __init__(self, lidarr_service: LidarrService, radarr_service: RadarrService, readarr_service: ReadarrService, sonarr_service: SonarrService):
+    def __init__(
+        self,
+        lidarr_service: LidarrService,
+        radarr_service: RadarrService,
+        readarr_service: ReadarrService,
+        sonarr_service: SonarrService,
+    ):
         self.lidarr_service = lidarr_service
         self.radarr_service = radarr_service
         self.readarr_service = readarr_service
@@ -70,7 +75,9 @@ class Tasks:
         """Save tasks to JSON file."""
         try:
             with open(self.config_file, "w") as f:
-                json.dump({task_id: task.to_dict() for task_id, task in self.tasks.items()}, f, indent=4)
+                json.dump(
+                    {task_id: task.to_dict() for task_id, task in self.tasks.items()}, f, indent=4
+                )
             logger.info("Tasks successfully saved.")
         except IOError as e:
             logger.error(f"Failed to save tasks: {e}")
