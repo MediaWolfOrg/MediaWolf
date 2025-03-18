@@ -32,14 +32,14 @@ RUN apk update && apk add --no-cache su-exec
 
 # Install requirements and run code
 RUN pip install --upgrade pip --root-user-action=ignore && \
-    pip install --no-cache-dir --root-user-action=ignore -r /mediawolf/docker/requirements.txt
+    pip install --no-cache-dir --root-user-action=ignore -r /mediawolf/requirements.txt
 ENV PYTHONPATH="${PYTHONPATH}:/mediawolf/backend"
 
 # Make the script executable
-RUN chmod +x /mediawolf/docker/init.sh
+RUN chmod +x /mediawolf/init.sh
 
 # Expose port
 EXPOSE 5000
 
 # Start the app
-ENTRYPOINT ["/mediawolf/docker/init.sh"]
+ENTRYPOINT ["/mediawolf/init.sh"]

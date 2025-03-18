@@ -18,4 +18,4 @@ chown -R ${puid}:${pgid} /config /downloads
 
 # Start the application with the specified user permissions
 echo "Starting MediaWolf..."
-exec su-exec ${puid}:${pgid} gunicorn backend.main:app -c /mediawolf/docker/gunicorn_config.py 
+exec su-exec ${puid}:${pgid} gunicorn backend.main:app -c /mediawolf/gunicorn_config.py 
