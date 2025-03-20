@@ -121,13 +121,13 @@ class MusicDBHandler(DatabaseHandler):
         min_play_count = data.get("min_play_count", None)
         min_listeners = data.get("min_listeners", None)
         sort_by = data.get("sort_by", "play_count")
-        num_results = data.get("num_results", 5)
-        page = data.get("page", None)
+        num_results = data.get("num_results", 10)
+        page = data.get("page", 1)
 
         if selected_artist == "all":
             db_results = self._get_random_artists(min_play_count, min_listeners, sort_by, num_results, page)
         else:
-            db_results = self._get_recommended_artists_for_lidarr_artist(selected_artist, min_play_count, min_listeners, sort_by)
+            db_results = self._get_recommended_artists_for_lidarr_artist(selected_artist, min_play_count, min_listeners, sort_by, num_results, page)
 
         json_results = [artist.as_dict() for artist in db_results]
         self.recommended_artists = json_results
@@ -171,7 +171,7 @@ class MusicDBHandler(DatabaseHandler):
             session.close()
 
     def _get_random_artists(self, min_play_count=None, min_listeners=None, sort_by="play_count", num_results=10, page=1):
-        """Retrieve random recommended artists with filters and sorting."""
+        """Retrieve random recommended artists with filters, sorting, and pagination."""
         session = self.SessionLocal()
         try:
             query = session.query(RecommendedArtist)
@@ -182,24 +182,22 @@ class MusicDBHandler(DatabaseHandler):
                 query = query.filter(RecommendedArtist.listeners >= min_listeners)
 
             if sort_by == "random":
-                query = query.order_by(func.random()).limit(num_results)
+                query = query.order_by(func.random())
             elif sort_by == "plays-desc":
-                query = query.order_by(RecommendedArtist.play_count.desc()).limit(num_results)
+                query = query.order_by(RecommendedArtist.play_count.desc())
             elif sort_by == "plays-asc":
-                query = query.order_by(RecommendedArtist.play_count.asc()).limit(num_results)
+                query = query.order_by(RecommendedArtist.play_count.asc())
             elif sort_by == "listeners-desc":
-                query = query.order_by(RecommendedArtist.listeners.desc()).limit(num_results)
+                query = query.order_by(RecommendedArtist.listeners.desc())
             elif sort_by == "listeners-asc":
-                query = query.order_by(RecommendedArtist.listeners.asc()).limit(num_results)
+                query = query.order_by(RecommendedArtist.listeners.asc())
 
-            query = query.distinct()
-            artists = query.all()
+            offset = (page - 1) * num_results
+            query = query.offset(offset).limit(num_results)
 
-            if not artists:
-                logger.error("No artists found matching the criteria.")
-                return []
+            artists = query.distinct().all()
 
-            logger.debug(f"Artists retrieved (sorted by {sort_by}): {len(artists)} artists.")
+            logger.debug(f"Page {page}: Retrieved {len(artists)} artists sorted by {sort_by}")
             return artists
 
         except Exception as e:
