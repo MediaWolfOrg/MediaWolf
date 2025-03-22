@@ -5,6 +5,7 @@ import { LogsPage } from './logs_script.js';
 import { SettingsPage } from './settings_script.js';
 import { SubscriptionsPage } from './subscriptions_script.js';
 import { TasksPage } from './tasks_script.js';
+import { UserPage } from './users_script.js';
 
 class BasePage {
     constructor() {
@@ -69,10 +70,13 @@ class BasePage {
                 this.pageInstances.subscriptions = new SubscriptionsPage();
             } else if (page === 'tasks') {
                 this.pageInstances.tasks = new TasksPage();
+            } else if (page === 'users') {  
+                this.pageInstances.users = new UserPage();
             }
         }
 
         if (this.pageInstances[page]) {
+            console.log(page)
             this.pageInstances[page].init();
         }
     }

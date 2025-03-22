@@ -1,7 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import declarative_base, relationship
-
-Base = declarative_base()
+from db.base import Base
 
 
 class DismissedArtist(Base):

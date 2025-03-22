@@ -1,11 +1,14 @@
 import os
-
 from api.books_api import BooksAPI
 from api.downloads_api import DownloadsAPI
 from api.logs_api import LogsAPI
 from api.movies_api import MoviesAPI
 from api.music_api import MusicAPI
 from api.settings_api import SettingsAPI
+from api.users_api import UsersAPI
+from api.tasks_api import TasksAPI
+from api.logs_api import LogsAPI
+from api.downloads_api import DownloadsAPI
 from api.shows_api import ShowsAPI
 from api.subscriptions_api import SubscriptionsAPI
 from api.tasks_api import TasksAPI
@@ -19,7 +22,12 @@ from services.radarr_services import RadarrService
 from services.readarr_services import ReadarrService
 from services.sonarr_services import SonarrService
 from services.spotdl_download_services import SpotDLDownloadService
+from services.config_services import Config
+from services.user_service import UserService
 from services.spotify_services import SpotifyService
+from db.music_db_handler import MusicDBHandler
+from db.user_db_handler import UserDBHandler
+
 
 
 class MediaWolfApp:
@@ -36,6 +44,7 @@ class MediaWolfApp:
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
 
         self.music_db = MusicDBHandler()
+        self.user_db = UserDBHandler()
         self.config = Config()
         self.lidarr_service = LidarrService(self.config, self.music_db)
         self.sonarr_service = SonarrService()
@@ -44,6 +53,7 @@ class MediaWolfApp:
         self.spotdl_download_service = SpotDLDownloadService(self.config, self.spotdl_download_history)
         self.spotify_service = SpotifyService(self.config)
         self.readarr_service = ()
+        self.user_service = UserService()
 
         self.music_api = MusicAPI(self.music_db, self.socketio, self.lidarr_service, self.spotify_service, self.spotdl_download_service)
         self.books_api = BooksAPI(self.music_db, self.socketio, self.readarr_service)
@@ -52,6 +62,7 @@ class MediaWolfApp:
         self.downloads_api = DownloadsAPI(self.socketio)
         self.subscriptions_api = SubscriptionsAPI(self.socketio, self.config)
         self.settings_api = SettingsAPI(self.music_db, self.socketio, self.config)
+        self.users_api = UsersAPI(self.user_service, self.socketio)
         self.tasks_api = TasksAPI(self.socketio, self.config, self.lidarr_service, self.radarr_service, self.readarr_service, self.sonarr_service)
         self.logs_api = LogsAPI(self.socketio)
 
@@ -69,6 +80,7 @@ class MediaWolfApp:
         self.app.register_blueprint(self.settings_api.get_blueprint())
         self.app.register_blueprint(self.tasks_api.get_blueprint())
         self.app.register_blueprint(self.logs_api.get_blueprint())
+        self.app.register_blueprint(self.users_api.get_blueprint())
 
         @self.app.route("/")
         def home():
